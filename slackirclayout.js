@@ -7,12 +7,14 @@
 // @include       https://slack.com/*
 // @include       https://*.slack.com/*
 // @run-at        document-start
-// @version       0.1
+// @version       1.0
 // ==/UserScript==
 
-
+/* User settings */
 const truncateLongNames = true;
 const maxNameLength = "80px";
+const bodyZoom = "80%";
+/* End user settings */
 
 const query = (x, y) => y.querySelector(x);
 const queryAll = (x, y) => y.querySelectorAll(x);
@@ -42,6 +44,7 @@ const ansiBadForWhite = { 0: true, 8: true, 11: true, 14: true, 15: true };
 const markerClass = "slackirc--has-been-modified";
 
 const stringAnsiColorCache = {};
+let myUsername = undefined;
 
 // Create a DOM text node.
 function __t(text, parent)
@@ -52,7 +55,8 @@ function __t(text, parent)
 }
 
 // Create a DOM element.
-function __e(elementType, parent) {
+function __e(elementType, parent)
+{
     const el = document.createElement(elementType);
     if (parent) { parent.appendChild(el); }
     return el;
@@ -89,6 +93,7 @@ function stringify(o)
     return o === null || o === undefined
         ? "" : o.toString();
 }
+
 
 // Based on https://stackoverflow.com/a/7616484/1392539
 function stringHash(s)
@@ -134,6 +139,16 @@ function stringAnsiColorCore(s)
     }
 }
 
+function getMyUsername()
+{
+    if (!myUsername)
+    {
+        myUsername = queryText("#team_menu_user_details .current_user_name", document.body);
+    }
+
+    return myUsername;
+}
+
 function updateMessageElement(target)
 {
     target.classList.add(markerClass);
@@ -177,6 +192,7 @@ function updateMessageElement(target)
     }
 
     const senderUrl = senderLinkElement ? senderLinkElement.href : undefined;
+    const isMe = sender == getMyUsername();
 
     const newMessageElement = createMessageElement({
         sender: sender,
@@ -184,7 +200,8 @@ function updateMessageElement(target)
         senderUrl: senderUrl,
         formattedTime: timeInput,
         messageHtml: messageHtml,
-        isAdjacentText: isAdjacentText
+        isAdjacentText: isAdjacentText,
+        isMe: isMe
     });
 
     target.appendChild(newMessageElement);
@@ -201,6 +218,7 @@ function createMessageElement(info)
     const formattedTime = info.formattedTime;
     const messageHtml = info.messageHtml;
     const isAdjacentText = info.isAdjacentText;
+    const isMe = info.isMe;
 
     const newline = __e("div");
     newline.classList.add("slackirc--new-message-line");
@@ -233,6 +251,11 @@ function createMessageElement(info)
             const senderEl = __e("a", nameContainer);
             __t(sender, senderEl);
             senderEl.classList.add("slackirc--name");
+            if (isMe)
+            {
+                senderEl.style.fontWeight = "bold";
+                senderEl.style.textDecoration = "underline";
+            }
             senderEl.style.color = stringAnsiColor(sender);
             senderEl.href = senderUrl;
             senderEl.title = sender;
@@ -347,7 +370,7 @@ function insertCSS()
         padding-top: 3px !important;
     }
 
-    .slackirc--new-message-line.slackirc--is-normal .slackirc--name-container {
+    .slackirc--is-normal .slackirc--name-container {
         ${truncateLongNames ? "width" : "min-width"}: ${maxNameLength};
         display: inline-block;
         overflow-x: hidden;
@@ -356,21 +379,28 @@ function insertCSS()
         flex-shrink: 0;
     }
 
-    .slackirc--new-message-line .slackirc--name-container {
+    .slackirc--name-container {
         margin-left: .5em;
         margin-right: .5em;
     }
 
-    .slackirc--new-message-line .slackirc--message-container {
+    .slackirc--message-container {
         flex-shrink: 1;
         margin-right: 20px;
+        word-break: break-word;
     }
 
-    .slackirc--new-message-line.slackirc--is-action .slackirc--message-container,
-    .slackirc--new-message-line.slackirc--is-action .slackirc--name-container
+    .slackirc--is-action .slackirc--message-container,
+    .slackirc--is-action .slackirc--name-container
     {
         color: ${ansiColors[6]};
         font-style: italic;
+    }
+
+    /* Modifications to existing elements. */
+
+    body {
+        zoom: ${bodyZoom};
     }
 
     body .c-scrollbar__bar {

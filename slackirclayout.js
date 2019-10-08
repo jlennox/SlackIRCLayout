@@ -13,7 +13,7 @@
 /* User settings */
 const truncateLongNames = true;
 const maxNameLength = "80px";
-const bodyZoom = "80%";
+const bodyZoom = "100%";
 /* End user settings */
 
 const query = (x, y) => y.querySelector(x);
@@ -154,7 +154,7 @@ function updateMessageElement(target)
     target.classList.add(markerClass);
 
     const timeInput = queryText(".c-timestamp__label", target);
-    const messageElement = query(".c-message__body", target);
+    const messageElement = query(".c-message__content", target);
 
     if (!timeInput || !messageElement)
     {
@@ -408,6 +408,8 @@ function insertCSS()
         border-radius: 0px;
     }
 
+    iframe[src='https://app.slack.com/draft-migration'] { display: none; }
+
     .channel_page_about,
     .channel_page_highlights,
     .channel_page_pinned_items,
@@ -418,7 +420,17 @@ function insertCSS()
     }
 
     #client_body [role=complementary] { flex-basis: 200px; }
-    .channel_page_members .member_image { display: none; }`;
+    .channel_page_members .member_image { display: none; }
+
+    body .c-message__body,
+    body .c-message__attachments {
+        margin: 0px !important;
+        line-height: normal !important;
+    }
+
+    body .slackirc--message-container .c-message__content_header {
+        display: none;
+    }`;
 
     const styleNode = __e("style");
     styleNode.type = "text/css";
